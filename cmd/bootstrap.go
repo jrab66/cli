@@ -69,7 +69,7 @@ windsor bootstrap prod --yes`,
 	Annotations: map[string]string{
 		"docs.seealso": "[`init`](init.md), [`apply`](apply.md), [`destroy`](destroy.md)\n" +
 			"[Global flags](../global-flags.md) — `--no-cache`, `--lock-timeout`, `--verbose`",
-		"docs.source":  "cmd/bootstrap.go",
+		"docs.source": "cmd/bootstrap.go",
 	},
 	Args:         cobra.MaximumNArgs(1),
 	SilenceUsage: true,
@@ -428,7 +428,7 @@ func confirmBootstrapIfContextExists(in io.Reader, configRoot, contextName strin
 }
 
 func init() {
-	bootstrapCmd.Flags().StringVar(&bootstrapPlatform, "platform", "", "Target platform: none, docker, incus, metal, hetzner, aws, azure, gcp, hyperv, vsphere.")
+	bootstrapCmd.Flags().StringVar(&bootstrapPlatform, "platform", "", "Target platform: none, docker, incus, metal, hetzner, aws, azure, gcp, hyperv, vsphere, proxmox.")
 	bootstrapCmd.Flags().StringVar(&bootstrapBlueprint, "blueprint", "", "Blueprint OCI reference. Accepts oci://host/org/repo:tag, host/org/repo:tag, or org/repo:tag (host defaults to ghcr.io). Tag is required.")
 	bootstrapCmd.Flags().StringSliceVar(&bootstrapSetFlags, "set", []string{}, "Override config values, e.g. --set dns.enabled=false. May be repeated.")
 	bootstrapCmd.Flags().BoolVarP(&bootstrapYes, "yes", "y", false, "Skip all confirmation prompts.")

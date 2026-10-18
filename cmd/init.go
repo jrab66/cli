@@ -53,7 +53,7 @@ windsor init local --reset
 windsor init staging --platform=aws --aws-profile=staging`,
 	Annotations: map[string]string{
 		"docs.seealso": "[`up`](up.md), [`apply`](apply.md), [`bootstrap`](bootstrap.md)",
-		"docs.source": "cmd/init.go",
+		"docs.source":  "cmd/init.go",
 	},
 	Args:         cobra.MaximumNArgs(1),
 	SilenceUsage: true,
@@ -222,7 +222,7 @@ func init() {
 	initCmd.Flags().StringVar(&initArch, "vm-arch", "", "CPU architecture for the workstation VM.")
 	initCmd.Flags().BoolVar(&initDocker, "docker", false, "Enable Docker.")
 	initCmd.Flags().BoolVar(&initGitLivereload, "git-livereload", false, "Enable git livereload.")
-	initCmd.Flags().StringVar(&initPlatform, "platform", "", "Target platform: none, docker, incus, metal, hetzner, aws, azure, gcp, hyperv, vsphere.")
+	initCmd.Flags().StringVar(&initPlatform, "platform", "", "Target platform: none, docker, incus, metal, hetzner, aws, azure, gcp, hyperv, vsphere, proxmox.")
 	initCmd.Flags().StringVar(&initBlueprint, "blueprint", "", "Blueprint OCI reference or local path.")
 	initCmd.Flags().StringVar(&initEndpoint, "endpoint", "", "Kubernetes API endpoint.")
 	initCmd.Flags().StringSliceVar(&initSetFlags, "set", []string{}, "Override config values, e.g. --set dns.enabled=false. May be repeated.")

@@ -117,6 +117,22 @@ func TestInit_PersistsSetValues(t *testing.T) {
 	}
 }
 
+func TestInit_KeepsANumericLookingStringForAStringField(t *testing.T) {
+	t.Parallel()
+	dir, env := helpers.CopyFixtureOnly(t, "default")
+	helpers.MarkAsGitRepo(t, dir)
+
+	_, stderr, err := helpers.RunCLI(dir, []string{"init", "local", "--set", "vm.driver=1.30"}, env)
+	if err != nil {
+		t.Fatalf("init local with a numeric-looking string: %v\nstderr: %s", err, stderr)
+	}
+
+	values := readYAMLFile(t, filepath.Join(dir, "contexts", "local", "values.yaml"))
+	if driver, ok := getPathValue(values, "vm", "driver"); !ok || driver != "1.30" {
+		t.Errorf("expected vm.driver to stay the string \"1.30\", got %#v", driver)
+	}
+}
+
 func TestInit_DevPlatformGoesToWorkstationState(t *testing.T) {
 	t.Parallel()
 	dir, env := helpers.CopyFixtureOnly(t, "default")
@@ -602,6 +618,33 @@ func TestInit_PlatformHetznerDefaultsBackendTypeToKubernetes(t *testing.T) {
 	}
 }
 
+// TestInit_PlatformProxmoxDefaultsBackendTypeToKubernetes confirms --platform proxmox
+// passes the built-in platform enum and defaults terraform.backend.type to "kubernetes".
+// The default fixture loads a blueprint schema, so the CLI applies its platform enum.
+// Proxmox runs Talos like hyperv and vsphere, so the cluster stores its own state.
+func TestInit_PlatformProxmoxDefaultsBackendTypeToKubernetes(t *testing.T) {
+	t.Parallel()
+	dir, env := helpers.CopyFixtureOnly(t, "default")
+	helpers.MarkAsGitRepo(t, dir)
+	stdout, stderr, err := helpers.RunCLI(dir, []string{"init", "proxmox-test", "--platform", "proxmox", "--set", "dns.enabled=false"}, env)
+	if err != nil {
+		t.Fatalf("expected init --platform proxmox to succeed, got %v\nstdout: %s\nstderr: %s", err, stdout, stderr)
+	}
+
+	valuesPath := filepath.Join(dir, "contexts", "proxmox-test", "values.yaml")
+	data, readErr := os.ReadFile(valuesPath)
+	if readErr != nil {
+		t.Fatalf("expected values.yaml at %s, got %v\nstdout: %s\nstderr: %s", valuesPath, readErr, stdout, stderr)
+	}
+	body := string(data)
+	if !strings.Contains(body, "platform: proxmox") {
+		t.Errorf("expected platform=proxmox persisted for --platform proxmox, got values.yaml:\n%s", body)
+	}
+	if !strings.Contains(body, "terraform:") || !strings.Contains(body, "type: kubernetes") {
+		t.Errorf("expected terraform.backend.type=kubernetes persisted for --platform proxmox, got values.yaml:\n%s", body)
+	}
+}
+
 // TestInit_PlatformGcpDefaultsBackendTypeToGcs confirms --platform gcp defaults
 // terraform.backend.type to "gcs", the canonical Cloud Storage state store on GCP.
 func TestInit_PlatformGcpDefaultsBackendTypeToGcs(t *testing.T) {
@@ -736,5 +779,32 @@ func TestInit_DevConfigOnNonLocalContextDefaultsWorkstation(t *testing.T) {
 	}
 	if wsRuntime, ok := getPathValue(state, "workstation", "runtime"); !ok || wsRuntime == "" {
 		t.Errorf("expected workstation.runtime to be defaulted for dev:true non-local context, got %v", wsRuntime)
+	}
+}
+
+func TestInit_WritesHeaderKeysFirstInValues(t *testing.T) {
+	t.Parallel()
+	dir, env := helpers.CopyFixtureOnly(t, "default")
+	helpers.MarkAsGitRepo(t, dir)
+
+	_, stderr, err := helpers.RunCLI(dir, []string{"init", "prod", "--platform", "aws", "--set", "addons.enabled=true"}, env)
+	if err != nil {
+		t.Fatalf("init prod --platform aws: %v\nstderr: %s", err, stderr)
+	}
+
+	content, err := os.ReadFile(filepath.Join(dir, "contexts", "prod", "values.yaml"))
+	if err != nil {
+		t.Fatalf("expected values.yaml for prod context: %v", err)
+	}
+	var values yaml.MapSlice
+	if err := yaml.Unmarshal(content, &values); err != nil {
+		t.Fatalf("expected values.yaml to parse as YAML: %v", err)
+	}
+	var keys []string
+	for _, item := range values {
+		keys = append(keys, item.Key.(string))
+	}
+	if len(keys) < 3 || keys[0] != "id" || keys[1] != "platform" || keys[len(keys)-1] != "addons" {
+		t.Errorf("expected id, platform, then the header keys, with addons last; got %v", keys)
 	}
 }
